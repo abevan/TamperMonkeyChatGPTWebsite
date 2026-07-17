@@ -137,8 +137,8 @@
     const composer = getComposer();
     if (!control || !composer || !window.matchMedia('(max-width:900px)').matches) return;
     const rect = composer.getBoundingClientRect();
-    control.style.top = `${Math.max(8, Math.round(rect.top + 10))}px`;
-    control.style.right = `${Math.max(8, Math.round(window.innerWidth - rect.right + 10))}px`;
+    control.style.top = `${Math.max(6, Math.round(rect.top - control.offsetHeight / 2))}px`;
+    control.style.right = `${Math.max(6, Math.round(window.innerWidth - rect.right - control.offsetWidth / 2))}px`;
     control.style.bottom = 'auto';
   }
 
