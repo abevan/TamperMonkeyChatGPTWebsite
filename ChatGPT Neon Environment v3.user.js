@@ -25,7 +25,7 @@
   let thrustTimer = 0;
   let observedComposer = null;
   const composerObserver = typeof ResizeObserver === 'function'
-    ? new ResizeObserver(() => syncHorizon())
+    ? new ResizeObserver(() => { syncHorizon(); syncThemeControl(); })
     : null;
 
   const css = `
@@ -72,7 +72,7 @@
     [aria-label="Response actions"]:not(.neon-actions-open) button:not([data-neon-action-toggle]){display:none!important}
     [aria-label="Response actions"].neon-actions-open button[data-neon-action-toggle]::before{transform:translateY(2px) rotate(225deg)}
     #${CONTROL}{position:fixed;right:22px;bottom:22px;z-index:2147483647;width:56px;height:56px;border:1px solid #ffffff70;border-radius:50%;color:#fff;cursor:pointer;font:700 24px/1 system-ui;background:conic-gradient(from 220deg,var(--neon-a),var(--neon-b),var(--neon-c),var(--neon-a));box-shadow:0 0 0 5px color-mix(in srgb,var(--neon-bg) 80%,transparent),0 14px 38px #0009,0 0 30px color-mix(in srgb,var(--neon-b) 52%,transparent)}#${CONTROL}::after{content:attr(data-label);position:absolute;right:0;bottom:67px;padding:7px 10px;border-radius:9px;color:#fff;opacity:0;background:var(--neon-panel);font:650 12px/1 system-ui;transition:opacity .18s}#${CONTROL}:hover::after{opacity:1}
-    @media(max-width:900px){.o2{display:none}#${CONTROL}{right:14px;bottom:14px;width:48px;height:48px}#${CONTROL}.neon-mobile-collapsed{width:28px;height:28px;font-size:14px;right:10px;bottom:10px;opacity:.72;box-shadow:0 0 0 3px color-mix(in srgb,var(--neon-bg) 80%,transparent),0 8px 18px #0008,0 0 14px color-mix(in srgb,var(--neon-b) 38%,transparent)}#${CONTROL}.neon-mobile-collapsed::after{display:none}}
+    @media(max-width:900px){.o2{display:none}#${CONTROL}{right:14px;bottom:14px;width:48px;height:48px}#${CONTROL}.neon-mobile-collapsed{width:28px;height:28px;font-size:14px;opacity:.72;box-shadow:0 0 0 3px color-mix(in srgb,var(--neon-bg) 80%,transparent),0 8px 18px #0008,0 0 14px color-mix(in srgb,var(--neon-b) 38%,transparent)}#${CONTROL}.neon-mobile-collapsed::after{display:none}}
     @media(prefers-reduced-motion:reduce){#${BACKDROP} *,h1{animation:none!important}}
   `;
 
@@ -127,25 +127,30 @@
     }
   }
 
+  function getComposer() {
+    const prompt = document.querySelector('#prompt-textarea');
+    return prompt?.closest('[data-type="unified-composer"]') || prompt?.closest('form') || document.querySelector('[data-type="unified-composer"]');
+  }
+
   function syncThemeControl() {
     const control = document.getElementById(CONTROL);
-    const composer = document.querySelector('#prompt-textarea')?.closest('[data-type="unified-composer"]');
+    const composer = getComposer();
     if (!control || !composer || !window.matchMedia('(max-width:900px)').matches) return;
     const rect = composer.getBoundingClientRect();
-    control.style.top = Math.max(8, Math.round(rect.top - control.offsetHeight - 6)) + 'px';
-    control.style.right = Math.max(8, Math.round(window.innerWidth - rect.right)) + 'px';
+    control.style.top = `${Math.max(8, Math.round(rect.top + 10))}px`;
+    control.style.right = `${Math.max(8, Math.round(window.innerWidth - rect.right + 10))}px`;
     control.style.bottom = 'auto';
   }
 
   function syncHorizon() {
-    const composer = document.querySelector('#prompt-textarea')?.closest('[data-type="unified-composer"]');
+    const composer = getComposer();
     if (!composer) return;
     const top = Math.round(composer.getBoundingClientRect().top);
     document.documentElement.style.setProperty('--composer-line-y', `${Math.max(0, top - 1)}px`);
   }
 
   function watchComposer() {
-    const composer = document.querySelector('#prompt-textarea')?.closest('[data-type="unified-composer"]');
+    const composer = getComposer();
     if (!composer) return;
     if (composer !== observedComposer) {
       if (observedComposer) composerObserver?.unobserve(observedComposer);
@@ -192,6 +197,7 @@
       });
       window.addEventListener('resize', () => { if (mobile()) { if (!c.classList.contains('neon-mobile-collapsed')) collapseLater(); } else { c.classList.remove('neon-mobile-collapsed'); window.clearTimeout(c._neonCollapseTimer); } }, { passive:true });
       document.body.append(c);
+      requestAnimationFrame(syncThemeControl);
     }
     setTheme(active);
     clearWarningOverlay();
